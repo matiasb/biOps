@@ -1,0 +1,15 @@
+
+biOps 0.2
+------------------------------------
+Added clustering algorithms: K-means, Isodata.
+Improved configure script.
+Added morphological binary and grayscale filters.
+Added FFT transformation and frequency filters.
+Added noise generation functions: Gaussian, Salt and Pepper.
+Added filters: Maximum, Minimum, Median.
+Added ChangeLog file.
+Fix for Windows binary build.
+
+biOps 0.1.1
+------------------------------------
+First Release Version.

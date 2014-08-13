@@ -1,0 +1,2 @@
+PKG_LIBS= -L $(LIB_TIFF)/lib/ -ltiff -L $(LIB_JPEG)/lib/ -ljpeg -L $(LIB_FFTW) -lfftw3-3
+PKG_CFLAGS=-I$(LIB_TIFF)/include -I$(LIB_JPEG)/include -I$(LIB_FFTW)

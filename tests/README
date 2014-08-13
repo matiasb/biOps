@@ -1,0 +1,26 @@
+
+TESTING YOUR PACKAGE
+
+
+* Config your test framework.
+
+Edit the framework.R file. There you can load the package for testing setting the pkg variable and add the functions and data that you would like to be available for every test.
+
+
+* Write your tests.
+
+The tests are special functions, stored in files named test* in your tests directory. In each test file you can define local functions and data. Your tests will be functions without parameters with names of the form test* that return a boolean value (TRUE means the test passed; otherwise returns FALSE).
+
+
+* Run the tests.
+
+From a shell, in your tests directory run:
+$ R --vanilla -q < main.R
+
+This will produce an output similar to this:
+
+> source("framework.R")
+...F
+testSthg
+
+each '.' indicates that a test has passed, while 'F' means that the test whose name is printed failed.

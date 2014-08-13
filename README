@@ -1,0 +1,14 @@
+
+biOps R package
+---------------
+Basic image operations and image processing
+
+This package includes several methods for image processing and analysis. It provides geometric, arithmetic, logic, morphologic (supported on one channel images only), look-up tables, edge detection (including Roberts, Sobel, Kirsch, Marr-Hildreth and Canny, among others) and convolution masks operations (predefined commons masks already defined and user defined applications). Isodata and k-means classification methods are also provided (standard, kd-tree and brute force methods implemented). Fast Fourier Transform methods and filters also available if fftw3 installed. Supports jpeg and tiff images so far (more image support in future versions). libtiff and libjpeg libraries installed required.
+
+* Installing from source.
+If you are running R on Linux, the only requirement is to have installed the libjpeg dev and library (and optionally, libtiff) packages. They are available in debian/ubuntu repositories, or can be download from http://www.ijg.org/ (libjpeg) and http://www.libtiff.org/ (libtiff). Then you can install the package as a normal R source package.
+If you are on Windows you should install the libjpeg library dev, binary and dependencies package (and optionally, libtiff). You can get them from http://gnuwin32.sourceforge.net/packages/jpeg.htm and http://gnuwin32.sourceforge.net/packages/tiff.htm. Then you have to define the environment variables LIB_JPEG and LIB_TIFF with the respective libraries path, so LIB_JPEG/lib and LIB_TIFF/lib point to the compiled libraries' directories, and LIB_JPEG/include and LIB_TIFF/include are the directories where the libraries' headers are located. You also must check that the binaries of the libraries are installed in a directory in your PATH environment variable. After this, you should be able to build and install the package on your system through R CMD INSTALL.
+
+* Install notes for 0.2 version.
+Besides the description above you can manage what libraries you want to compile with (libjpeg, libtiff, libfftw) modifying the config.h file and defining the respective constants to 1 (or 0 if you do not have the library installed). The default is just require the libjpeg library, whose sources are included in the package in the req_libs directory (although is preferred the above method for installing the libs).
+Since this version you could have support for Fast Fourier Transformations if you have libfftw3 installed on your system. You can download it from http://fftw.org/download.html or through the debian/ubuntu repositories. For windows users, you can get it from ftp://ftp.fftw.org/pub/fftw/fftw-3.1.2-dll.zip, and as with the other libraries, you should define the environment variable LIB_FFTW to the directory where you unzipped the file and add it to your PATH variable too.

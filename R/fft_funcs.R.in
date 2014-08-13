@@ -1,0 +1,223 @@
+# Copyright 2007 Walter Alini, Matías Bordese
+
+#
+# This file is part of biOps.
+#
+#     biOps is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 2 of the License, or
+#     (at your option) any later version.
+#
+#     biOps is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with biOps; if not, write to the Free Software
+#     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+
+
+#
+#	Title: Fast Fourier Transformation
+#
+
+
+#	Function: imgFFT
+#	Builds the complex matrix corresponding to the Fast Fourier Transformation
+#	of the given image.
+#
+#	Parameters:
+#		imgdata - The image data.
+#
+#	Returns:
+#		A complex matrix.
+#
+imgFFT <- function(imgdata, shift=TRUE){
+	if(!@HAVE_FFTW_H@)
+		stop("Sorry, fftw not available")
+
+	imgmatrix <- array(imgdata) # get linear array image representations
+	depth <- if (attr(imgdata, "type") == "grey") 1 else dim(imgdata)[3] # get images depth
+	width <- dim(imgdata)[2]
+	height <- dim(imgdata)[1]
+
+	# call the C function for image operation
+	res <- .C("fft_image", image=as.complex(imgmatrix),
+			width=as.integer(width), height=as.integer(height), depth=as.integer(depth),
+			PACKAGE="biOps")
+
+	imgdim <- c(height, width, if (depth == 3) depth else NULL) # dim of the result	
+	img <- array(res$image, dim=imgdim) # build the matrix from linear result
+	if (shift)
+		imgFFTShift(img)
+	else
+		img
+}
+
+#	Function: imgFFToc
+#	Builds the complex matrix corresponding to the Fast Fourier Transformation
+#	of the given image, with the fixed origin.
+#
+#	Parameters:
+#		imgdata - The image data.
+#
+#	Returns:
+#		A complex matrix.
+#
+# imgFFToc <- function(imgdata){
+# 	res <- imgFFT(imgdata)
+# 	imgFFTShift(res)
+# }
+
+#	Function: imgFFTInv
+#	Builds an image from a complex matrix corresponding to the Fast Fourier Transformation
+#	of an image.
+#
+#	Parameters:
+#		fft_matrix - The complex matrix.
+#
+#	Returns:
+#		An imagedata.
+#
+imgFFTInv <- function(fft_matrix, shift=TRUE){
+	if(!@HAVE_FFTW_H@)
+		stop("Sorry, fftw not available")
+
+	if (shift)
+		fft_matrix <- imgFFTiShift(fft_matrix)
+	imgmatrix <- array(fft_matrix) # get linear array image representations
+	depth <- if (length(dim(fft_matrix)) == 2) 1 else dim(fft_matrix)[3]
+	width <- dim(fft_matrix)[2]
+	height <- dim(fft_matrix)[1]
+	plane_size <- depth * width * height
+
+	# call the C function for image operation
+	res <- .C("fftinv_image", image=as.complex(imgmatrix),
+			width=as.integer(width), height=as.integer(height), depth=as.integer(depth),
+			PACKAGE="biOps")
+
+	int_matrix <- as.integer(Re(res$image) / plane_size)
+	imgdim <- c(height, width, if (depth == 3) depth else NULL) # dim of the result	
+	img <- array(int_matrix, dim=imgdim) # build the matrix from linear result
+	imagedata(abs(img))
+}
+
+# imgFFTocInv <- function(fft_matrix){
+# 	fft_matrix <- imgFFTiShift(fft_matrix)
+# 	imgFFTInv(fft_matrix)
+# }
+
+#	Function: imgFFTSpectrum
+#	Builds the power spectrum from a given fft matrix.
+#
+#	Parameters:
+#		fft_matrix - The fft data.
+#
+#	Returns:
+#		The imagedata of the spectrum.
+#
+imgFFTSpectrum <- function(fft_matrix) {
+	# Mod: polar coordinates
+	# log1p: log(1+x)
+	imgNormalize(imagedata(log1p(Mod(fft_matrix))))
+}
+
+#	Function: imgFFTPhase
+#	Builds the phase from a given fft matrix.
+#
+#	Parameters:
+#		fft_matrix - The fft data.
+#
+#	Returns:
+#		The imagedata of the phase.
+#
+imgFFTPhase <- function(fft_matrix) {
+	# Mod: polar coordinates
+	# log1p: log(1+x)
+	imgNormalize(imagedata(Arg(fft_matrix)))
+}
+
+#	Function: imgFFTShift
+#	Shifts the matrix, to reorder the origin to the center. Works with even and odd dimensions.
+#
+#	Parameters:
+#		imgmatrix - The matrix data.
+#
+#	Returns:
+#		The shifted matrix.
+#
+imgFFTShift <- function(imgmatrix) {
+	depth <- if (length(dim(imgmatrix)) == 2) 1 else dim(imgmatrix)[3]
+	width <- dim(imgmatrix)[2]
+	height <- dim(imgmatrix)[1]
+
+	vertical_center <- floor(height/2) + 1
+	horizontal_center <- floor(width/2) + 1
+	vreord <- c(vertical_center:height, 1:vertical_center- 1)
+	hreord <- c(horizontal_center:width, 1:horizontal_center-1)
+	# reordering of pixels
+	ret <- if (depth > 1) imgmatrix[vreord, hreord,] else imgmatrix[vreord, hreord]
+	ret
+}
+
+#	Function: imgFFTiShift
+#	Undoes the imgFFTShift of the matrix. Works with even and odd dimensions.
+#
+#	Parameters:
+#		imgmatrix - The matrix data.
+#
+#	Returns:
+#		The shifted matrix.
+#
+imgFFTiShift <- function(imgmatrix) {
+	depth <- if (length(dim(imgmatrix)) == 2) 1 else dim(imgmatrix)[3]
+	width <- dim(imgmatrix)[2]
+	height <- dim(imgmatrix)[1]
+
+	vertical_center <- ceiling(height/2) + 1
+	horizontal_center <- ceiling(width/2) + 1
+	vreord <- c(vertical_center:height, 1:vertical_center- 1)
+	hreord <- c(horizontal_center:width, 1:horizontal_center-1)
+	# reordering of pixels
+	ret <- if (depth > 1) imgmatrix[vreord, hreord,] else imgmatrix[vreord, hreord]
+	ret
+}
+
+#	Function: imgPadding
+#	Pads the image into a square of dimension n * n, leaving the image in the center.
+#
+#	Parameters:
+#		imgdata - The image data.
+#		n - Dim of the square.
+#
+#	Returns:
+#		The padded image.
+#
+imgPadding <- function(imgdata, n, m=n){
+	imgmatrix <- array(imgdata) # get linear array image representations
+	depth <- if (attr(imgdata, "type") == "grey") 1 else dim(imgdata)[3] # get images depth
+	width <- dim(imgdata)[2]
+	height <- dim(imgdata)[1]
+
+	if (n < width){
+		n <- width
+		warning ("Given width less than original; it is kept")
+	}
+
+	if (m < height){
+		m <- height
+		warning ("Given height less than original; it is kept")
+	}
+
+	# call the C function for image operation
+	res <- .C("padding", image=as.integer(imgmatrix),
+			width=as.integer(width), height=as.integer(height), depth=as.integer(depth),
+			n=as.integer(n), m=as.integer(m), ret=integer(n * m * depth), PACKAGE="biOps")
+
+	imgtype <- if (depth == 1) "grey" else "rgb" # type of the result
+	imgdim <- c(m, n, if (depth == 3) depth else NULL) # dim of the result
+	img <- array(res$ret, dim=imgdim) # build the matrix from linear result
+	imagedata(img, type=imgtype) # build the imagedata
+}
